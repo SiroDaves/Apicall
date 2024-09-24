@@ -1,4 +1,4 @@
-package com.example.wolt
+package com.example.wolt.presentation.screens
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
+import com.example.wolt.data.models.Item
+import com.example.wolt.presentation.viewmodel.VenueViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

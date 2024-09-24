@@ -1,7 +1,9 @@
-package com.example.wolt
+package com.example.wolt.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.wolt.data.models.Item
+import com.example.wolt.domain.VenueRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*

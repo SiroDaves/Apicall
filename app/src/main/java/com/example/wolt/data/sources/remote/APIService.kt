@@ -1,5 +1,6 @@
-package com.example.wolt
+package com.example.wolt.data.sources.remote
 
+import com.example.wolt.data.models.WoltResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 

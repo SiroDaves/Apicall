@@ -1,4 +1,4 @@
-package com.example.wolt
+package com.example.wolt.data.models
 
 data class WoltResponse(
     val name: String,

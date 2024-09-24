@@ -1,5 +1,8 @@
-package com.example.wolt
+package com.example.wolt.core.di
 
+import com.example.wolt.domain.VenueRepoImpl
+import com.example.wolt.domain.VenueRepository
+import com.example.wolt.data.sources.remote.ApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

@@ -5,7 +5,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.wolt.ui.theme.WoltTheme
+import com.example.wolt.presentation.screens.VenueListScreen
+import com.example.wolt.presentation.theme.WoltTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -16,9 +17,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             WoltTheme {
                 VenueListScreen(viewModel = hiltViewModel())
-
-
-            }
+                }
             }
         }
     }
