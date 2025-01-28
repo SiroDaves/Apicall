@@ -1,55 +1,77 @@
 package com.example.wolt
 
-
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil3.compose.AsyncImage
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VenueListScreen(
     modifier: Modifier = Modifier,
     viewModel: VenueViewModel = hiltViewModel(),
 ) {
-    // Collect state from the ViewModel
+    // Collect state from ViewModel
     val venues by viewModel.venues.collectAsState(initial = emptyList())
     val loading by viewModel.loading.collectAsState(initial = false)
     val error by viewModel.error.collectAsState(initial = null)
 
-    // Start fetching venues only once
-    LaunchedEffect(key1 = Unit) {
+    // Manage favorite state
+    var favoriteVenues by remember { mutableStateOf(setOf<String>()) }
+
+    // Start fetching venues
+    LaunchedEffect(Unit) {
         viewModel.startVenueFetchCycle()
     }
 
-    // Venue list screen layout
-    Column(modifier = modifier.padding(16.dp)) {
-        when {
-            loading -> {
-                LoadingState()
-            }
-            error != null -> {
-                ErrorState(errorMessage = error!!) {
-
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                ),
+                title = {
+                    Text("Venue List")
                 }
-            }
-            venues.isEmpty() -> {
-                EmptyState()
-            }
-            else -> {
-                LazyColumn {
+            )
+        },
+    ) { innerPadding ->
+        Column(modifier = modifier.padding(innerPadding).padding(16.dp)) {
+            when {
+                loading -> LoadingState()
+                error != null -> ErrorState(
+                    errorMessage = error!!,
+                    onRetry = { viewModel.startVenueFetchCycle() }
+                )
+                venues.isEmpty() -> EmptyState()
+                else -> LazyColumn {
                     items(venues) { venue ->
-                        VenueItem(venue = venue)
+                        val isFavorite = favoriteVenues.contains(venue.title)
+                        VenueItem(
+                            venue = venue,
+                            isFavorite = isFavorite,
+                            onFavoriteClick = {
+                                favoriteVenues = if (isFavorite) {
+                                    favoriteVenues - venue.title
+                                } else {
+                                    favoriteVenues + venue.title
+                                }
+                            }
+                        )
                     }
                 }
             }
@@ -58,18 +80,76 @@ fun VenueListScreen(
 }
 
 @Composable
-fun VenueItem(venue: Venue) {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(text = "Id: ${venue.id}", fontWeight = FontWeight.Bold)
-        Text(text = "Name: ${venue.name}")
-        Text(text = "Short Description: ${venue.short_description}")
-        Text(text = "Image URL: ${venue.url}")
+fun VenueItem(venue: Item, isFavorite: Boolean, onFavoriteClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Venue Image
+        /*Image(
+            painter = venue.image.url),
+            contentDescription = venue.title,
+            modifier = Modifier
+                .size(56.dp)
+                .clip(CircleShape)
+                .border(1.dp, Color.Gray, CircleShape)
+        )*/
+        AsyncImage(
+            model = venue.image.url,
+            contentDescription = venue.title,
+            modifier = Modifier
+                .size(56.dp)
+                .clip(CircleShape)
+                .border(1.dp, Color.Gray, CircleShape)
+        )
+        // Venue Details
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 16.dp)
+        ) {
+            Text(
+                text = venue.title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+            /*Text(
+                text = venue.quantity,
+                fontSize = 14.sp,
+                //color = Color.Gray
+            )*/
+        }
+
+        // Favorite Button
+        IconButton(onClick = onFavoriteClick) {
+            Icon(
+                imageVector = Icons.Filled.Favorite,
+                contentDescription = "Favorite",
+                tint = if (isFavorite) Color.Black else Color.Gray
+            )
+        }
     }
 }
 
 @Composable
 fun LoadingState() {
-    Text(text = "Loading...", modifier = Modifier.padding(16.dp))
+    Box(
+        modifier = Modifier
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(50.dp),
+                color = MaterialTheme.colorScheme.primary,
+                strokeWidth = 4.dp
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(text = "Loading venues...", fontSize = 16.sp, color = Color.Gray)
+        }
+    }
 }
 
 @Composable

@@ -51,7 +51,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
 
     packaging {
@@ -72,6 +72,7 @@ dependencies {
 
     // OkHTTP
     implementation(libs.okhttp)
+    implementation(libs.okhttp.interceptor)
 
     // Compose
     implementation(libs.compose)
@@ -84,6 +85,10 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom.v20250100))
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
+
+    //Coil-Kt (image loading library for Android)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
     // Hilt (Dependency Injection)
     implementation(libs.hilt.android)
@@ -108,12 +113,6 @@ dependencies {
 
     // Desugaring
     coreLibraryDesugaring(libs.desugar.jdk.libs)
-
-
-
-
-
-
 }
 
 

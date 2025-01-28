@@ -3,13 +3,8 @@ package com.example.wolt
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 
 @HiltViewModel
@@ -17,8 +12,8 @@ class VenueViewModel @Inject constructor(
     private val venueRepository: VenueRepository
 ) : ViewModel() {
 
-    private val _venues = MutableStateFlow<List<Venue>>(emptyList())
-    val venues: StateFlow<List<Venue>> get() = _venues
+    private val _venues = MutableStateFlow<List<Item>>(emptyList())
+    val venues: StateFlow<List<Item>> get() = _venues
 
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> get() = _loading
@@ -26,16 +21,18 @@ class VenueViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> get() = _error
 
+    private val startLocation = 60.170187 to 24.930599
+
     private val locations = listOf(
-        60.169418 to 24.931618,
-        60.169818 to 24.932906,
-        60.170005 to 24.935105,
-        60.169108 to 24.936210,
-        60.168355 to 24.934869,
-        60.167560 to 24.932562,
-        60.168254 to 24.931532,
-        60.169012 to 24.930341,
-        60.170085 to 24.929569
+        60.170187 to 24.930599,  // Center point
+        60.170187 to 24.932599,  // East
+        60.168187 to 24.930599,  // South
+        60.170187 to 24.928599,  // West
+        60.172187 to 24.930599,  // North
+        60.171187 to 24.931599,  // Northeast
+        60.169187 to 24.931599,  // Southeast
+        60.169187 to 24.929599,  // Southwest
+        60.171187 to 24.929599   // Northwest
     )
 
     private suspend fun getVenuesForLocationWithRetry(
@@ -48,48 +45,45 @@ class VenueViewModel @Inject constructor(
 
         while (currentAttempt < maxRetries) {
             try {
-                // Perform the network call or database operation
-                val response = withContext(Dispatchers.IO) {
+                val venues = withContext(Dispatchers.IO) {
                     venueRepository.getVenuesForLocation(latitude, longitude)
                 }
-                _venues.emit(response) // Update venues list
-                _error.emit(null) // Clear error
-                return // Exit after success
+                // Only emit new venues if we successfully fetched them
+                _venues.emit(venues)
+                _error.emit(null)
+                return
             } catch (e: Exception) {
                 currentAttempt++
                 if (currentAttempt >= maxRetries) {
-                    _venues.emit(emptyList()) // Clear venues list on failure
-                    _error.emit("Error: ${e.localizedMessage ?: "Failed after $maxRetries retries"}")
+                    _error.emit("Failed to fetch venues: ${e.message}")
                 } else {
-                    delay(retryDelay) // Wait before retrying
+                    delay(retryDelay)
                 }
             }
         }
     }
+
     fun startVenueFetchCycle() {
-        // Launch in the background using Dispatchers.IO to handle the task off the main thread
-        viewModelScope.launch(Dispatchers.IO) {
-            var index = 0
+        viewModelScope.launch {
+            var locationIndex = 0
+
             while (isActive) {
-                val (latitude, longitude) = locations[index % locations.size]
+                _loading.emit(true)
 
-                // Emit loading state (this is still done in the IO context)
-                _loading.emit(true) // Indicate loading
+                // Get current location coordinates
+                val (latitude, longitude) = locations[locationIndex % locations.size]
 
-                // Perform the venue fetch with retry (assuming getVenuesForLocationWithRetry is a suspending function)
+                // Fetch venues for current location
                 getVenuesForLocationWithRetry(latitude, longitude)
 
-                // Emit loading state (after fetching)
-                _loading.emit(false) // Stop loading for this location
+                _loading.emit(false)
 
-                index++
+                // Move to next location in the circle
+                locationIndex = (locationIndex + 1) % locations.size
 
-                // Delay between fetches, still in the background
-                delay(10_000L) // Wait 10 seconds before the next fetch
+                // Wait before fetching next location
+                delay(10_000) // 10 seconds delay between location changes
             }
         }
     }
-
 }
-
-
